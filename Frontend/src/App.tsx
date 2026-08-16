@@ -1,11 +1,61 @@
-import './App.css'
+import { useState } from "react"
 
 function App() {
+  const [message, setMessage] = useState<string>("")
+
+  const handleSend = (): void => {
+    if (message.trim() === "") return
+
+    console.log("User Input:", message)
+
+    setMessage("")
+  }
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>
+  ): void => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
 
   return (
-    <>
-      hi
-    </>
+    <div className="h-screen flex flex-col">
+
+      {/* Chat Area */}
+      <div className="flex-1 flex items-center justify-center">
+        <h1 className="text-3xl font-bold">
+          KarveAgent
+        </h1>
+      </div>
+
+      {/* Input Area */}
+      <div className="border-t p-4">
+
+        <div className="max-w-3xl mx-auto flex items-end gap-2 border rounded-2xl p-2">
+
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Message KarveAgent..."
+            rows={1}
+            className="flex-1 resize-none outline-none px-3 py-2"
+          />
+
+          <button
+            onClick={handleSend}
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl"
+          >
+            ↑
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
   )
 }
 
