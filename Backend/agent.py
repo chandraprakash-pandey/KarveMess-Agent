@@ -23,9 +23,18 @@ llm = ChatOpenAI(
 # =========================
 
 @tool
-def get_todays_menu(day: str) -> str:
+def get_todays_menu() -> str:
     """
-    Get the mess today menu.
+    Fetch the mess menu for today from the KarveMess backend.
+
+    Use this tool when the user asks about:
+    - Today's breakfast, lunch, or dinner
+    - Today's mess menu
+    - What is being served today
+    - What food is available today
+
+    This tool retrieves the latest menu configured by the Mess Owner.
+    Do not use this tool for menus of previous or future dates.
     """
     url = f"{SERVER_URL}/menu"
 
@@ -33,8 +42,8 @@ def get_todays_menu(day: str) -> str:
         url,
     )
 
-    if response is None:
-        return f"Menu not found for {day}"
+    if response.status_code == 404:
+        return f"No Mess Owner added Menu today!!"
 
     response.raise_for_status()
 
@@ -47,7 +56,7 @@ def get_todays_menu(day: str) -> str:
 
 agent = create_agent(
     model=llm,
-    tools=[get_menu],
+    tools=[get_todays_menu],
     system_prompt="""
 You are KarveAgent, an AI assistant for mess owners.
 
@@ -61,15 +70,3 @@ If the required information is not available through a tool,
 clearly say that you don't have that information.
 """
 )
-
-response = agent.invoke({
-    "messages": [
-        {
-            "role": "user",
-            "content": "What is the menu for Monday?"
-        }
-    ]
-})
-
-
-print(response["messages"][-1].content)
