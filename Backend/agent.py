@@ -46,18 +46,23 @@ llm = ChatOpenAI(
 @tool
 def get_todays_menu() -> str:
     """
-    Fetch the mess menu for today from the KarveMess backend.
+    Fetch today's mess menu from the KarveMess backend.
 
-    Use this tool when the user asks about:
-    - Today's breakfast, lunch, or dinner
-    - Today's mess menu
-    - What is being served today
-    - What food is available today
+    Use this tool for queries about today's:
+    - Breakfast
+    - Lunch
+    - Dinner
+    - Mess menu
+    - Available food/items
 
-    And answer with Mess Name with its Item and Price of that item. Don't give any detail about ChefId.
+    Return only:
+    - Mess name
+    - Item name
+    - Item price
 
-    This tool retrieves the latest menu configured by the Mess Owner.
-    Do not use this tool for menus of previous or future dates.
+    Do not include ChefId or any other backend/internal fields.
+
+    Do not use this tool for past or future dates.
     """
     url = f"{SERVER_URL}/menu"
 
@@ -94,7 +99,7 @@ def chat_with_history(user_message: str) -> str:
         "content": user_message,
     })
 
-    response = agent.invoke({
+    response = student_agent.invoke({
         "messages": messages,
     })
 
