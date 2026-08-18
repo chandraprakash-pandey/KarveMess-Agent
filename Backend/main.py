@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from agent import agent
+from agent import chat_with_history
 
 app = FastAPI()
 
@@ -29,19 +29,9 @@ def home():
 
 @app.post("/agent/chat")
 def chat(request: ChatRequest):
-
     print("User:", request.message)
 
-    response = agent.invoke({
-        "messages": [
-            {
-                "role": "user",
-                "content": request.message
-            }
-        ]
-    })
-
-    answer = response["messages"][-1].content
+    answer = chat_with_history(request.message)
 
     return {
         "message": answer
