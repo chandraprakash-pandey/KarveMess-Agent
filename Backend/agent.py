@@ -9,11 +9,11 @@ load_dotenv()
 
 SERVER_URL = os.getenv("SERVER_URL")
 
-SYSTEM_PROMPT = """
-You are KarveAgent, an AI assistant for mess owners.
+SYSTEM_PROMPT_STUDENT = """
+You are KarveAgent, an AI assistant for students.
 
-Your job is to help the mess owner manage and retrieve
-mess information.
+Your job is to help students access and retrieve
+mess information and Menu Items.
 
 Use the available tools whenever they are required.
 
@@ -26,7 +26,7 @@ clearly say that you don't have that information.
 messages = [
     {
         "role": "system",
-        "content": SYSTEM_PROMPT,
+        "content": SYSTEM_PROMPT_STUDENT,
     }
 ]
 
@@ -46,7 +46,7 @@ llm = ChatOpenAI(
 @tool
 def get_todays_menu() -> str:
     """
-    Fetch today's mess menu from the KarveMess backend.
+    Fetch today's mess menu from the KarveMess backend for students.
 
     Use this tool for queries about today's:
     - Breakfast
@@ -57,8 +57,10 @@ def get_todays_menu() -> str:
 
     Return only:
     - Mess name
+    - Mess Address
     - Item name
     - Item price
+    With Friendly way with Student.
 
     Do not include ChefId or any other backend/internal fields.
 
@@ -85,7 +87,7 @@ def get_todays_menu() -> str:
 student_agent = create_agent(
     model=llm,
     tools=[get_todays_menu],
-    system_prompt=SYSTEM_PROMPT,
+    system_prompt=SYSTEM_PROMPT_STUDENT,
 )
 
 
