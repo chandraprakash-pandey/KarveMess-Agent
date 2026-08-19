@@ -8,10 +8,14 @@ type Message = {
   content: string;
 };
 
+type UserRole = "student" | "mess-owner";
+
 function App() {
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [ownerDemoNote, setOwnerDemoNote] = useState<string>("");
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -76,13 +80,85 @@ function App() {
     }
   };
 
+  const handleStudentRole = (): void => {
+    setSelectedRole("student");
+    setOwnerDemoNote("");
+  };
+
+  const handleOwnerDemo = (): void => {
+    setOwnerDemoNote("Mess Owner mode is coming soon. This is a demo button for now.");
+  };
+
+  const handleBackToRoleSelection = (): void => {
+    setSelectedRole(null);
+  };
+
+  if (selectedRole !== "student") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-700 flex items-center justify-center px-6 py-10">
+        <div className="w-full max-w-3xl rounded-3xl bg-white/95 p-8 md:p-12 shadow-2xl border border-white/50 backdrop-blur">
+          <p className="text-xs font-semibold tracking-[0.24em] uppercase text-orange-600">
+            Access Lock
+          </p>
+
+          <h1 className="mt-3 text-3xl md:text-4xl font-bold text-slate-900 leading-tight">
+            Choose how you want to enter KarveAgent
+          </h1>
+
+          <p className="mt-4 text-slate-600 text-base md:text-lg">
+            Select Student to use your current agent chat. Mess Owner is a demo button for now.
+          </p>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            <button
+              onClick={handleStudentRole}
+              className="rounded-2xl px-6 py-5 text-left bg-slate-900 text-white hover:bg-slate-700 transition-colors"
+            >
+              <div className="text-lg font-semibold">Use Agent as Student</div>
+
+              <div className="text-sm text-slate-300 mt-1">
+                Opens the student assistant you already built.
+              </div>
+            </button>
+
+            <button
+              onClick={handleOwnerDemo}
+              className="rounded-2xl px-6 py-5 text-left bg-orange-100 text-orange-900 border border-orange-300 hover:bg-orange-200 transition-colors"
+            >
+              <div className="text-lg font-semibold">Use Agent as Mess Owner</div>
+
+              <div className="text-sm text-orange-800 mt-1">
+                Demo button only.
+              </div>
+            </button>
+          </div>
+
+          {ownerDemoNote !== "" && (
+            <div className="mt-6 rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-orange-900">
+              {ownerDemoNote}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="border-b px-6 py-4">
-        <h1 className="text-xl font-bold">KarveAgent</h1>
+      <header className="border-b px-6 py-4 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold">KarveAgent</h1>
 
-        <p className="text-sm text-gray-500">AI Assistant for Mess Owners</p>
+          <p className="text-sm text-gray-500">AI Assistant for Students</p>
+        </div>
+
+        <button
+          onClick={handleBackToRoleSelection}
+          className="text-sm px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
+        >
+          Change Role
+        </button>
       </header>
 
       {/* Chat Messages */}
