@@ -99,6 +99,8 @@ function App() {
 
       const response = await axios.post(`${AGENT_BASE_URL}/agent/${person}/chat`, {
         message: userMessage,
+      }, {
+        withCredentials: true,
       });
 
       const agentResponse = response.data.message;

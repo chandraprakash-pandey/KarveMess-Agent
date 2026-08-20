@@ -1,8 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from agent import chat_with_history, chat_with_mess_owner_history
+from agent import chat_with_history, chat_with_mess_owner_history, set_owner_cookie_header
 
 app = FastAPI()
 
@@ -46,10 +46,12 @@ def chat(request: ChatRequest):
 
 
 @app.post("/agent/owner/chat")
-def mess_owner_chat(request: ChatRequest):
+def mess_owner_chat(request: ChatRequest, raw_request: Request):
     print("Mess Owner:", request.message)
 
+    set_owner_cookie_header(raw_request.headers.get("cookie", ""))
     answer = chat_with_mess_owner_history(request.message)
+    set_owner_cookie_header("")
 
     return {
         "message": answer
