@@ -6,10 +6,17 @@ from agent import chat_with_history, chat_with_mess_owner_history
 
 app = FastAPI()
 
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+]
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5174"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,7 +34,7 @@ def home():
     }
 
 
-@app.post("/agent/chat")
+@app.post("/agent/student/chat")
 def chat(request: ChatRequest):
     print("User:", request.message)
 
@@ -38,7 +45,7 @@ def chat(request: ChatRequest):
     }
 
 
-@app.post("/agent/mess-owner/chat")
+@app.post("/agent/owner/chat")
 def mess_owner_chat(request: ChatRequest):
     print("Mess Owner:", request.message)
 

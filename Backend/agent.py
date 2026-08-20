@@ -90,16 +90,16 @@ def get_todays_menu() -> str:
     """
     url = f"{SERVER_URL}/menu"
 
-    response = requests.get(
-        url,
-    )
+    try:
+        response = requests.get(url, timeout=10)
 
-    if response.status_code == 404:
-        return f"No Mess Owner added Menu today!!"
+        if response.status_code == 404:
+            return "No Mess Owner added Menu today!!"
 
-    response.raise_for_status()
-
-    return response.text
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException:
+        return "Unable to fetch today's menu right now. Please try again later."
 
 
 @tool
@@ -112,15 +112,21 @@ def get_mess_owner_personal_data() -> str:
     - Name, contact, or account details
     - Their owner information
 
-    This tool sends a GET request to http://localhost:8001/user.
+    This tool sends a GET request to the specified URL.
     """
-    response = requests.get("http://localhost:8001/user")
 
-    if response.status_code == 404:
-        return "Mess owner personal data was not found."
+    url = f"{SERVER_URL}/user"
 
-    response.raise_for_status()
-    return response.text
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 404:
+            return "Mess owner personal data was not found."
+
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException:
+        return "Unable to fetch owner personal data right now. Please try again later."
 
 
 # =========================
@@ -150,11 +156,14 @@ def chat_with_history(user_message: str) -> str:
         "content": user_message,
     })
 
-    response = student_agent.invoke({
-        "messages": messages_students,
-    })
+    try:
+        response = student_agent.invoke({
+            "messages": messages_students,
+        })
 
-    ai_message = response["messages"][-1].content
+        ai_message = response["messages"][-1].content
+    except Exception:
+        ai_message = "I couldn't process your request right now. Please try again in a moment."
 
     messages_students.append({
         "role": "ai",
@@ -166,6 +175,7 @@ def chat_with_history(user_message: str) -> str:
 
 def chat_with_mess_owner_history(user_message: str) -> str:
     """Store mess-owner chat history and return the agent response."""
+    
     if not user_message or not user_message.strip():
         return "Please enter a valid message."
 
@@ -174,11 +184,14 @@ def chat_with_mess_owner_history(user_message: str) -> str:
         "content": user_message,
     })
 
-    response = mess_owner_agent.invoke({
-        "messages": messages_mess_owner,
-    })
+    try:
+        response = mess_owner_agent.invoke({
+            "messages": messages_mess_owner,
+        })
 
-    ai_message = response["messages"][-1].content
+        ai_message = response["messages"][-1].content
+    except Exception:
+        ai_message = "I couldn't process your owner request right now. Please try again in a moment."
 
     messages_mess_owner.append({
         "role": "ai",
