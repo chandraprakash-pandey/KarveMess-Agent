@@ -40,18 +40,9 @@ Never invent personal details.
 If the required information is not available through a tool,
 clearly say that you don't have that information.
 
-When the owner wants to change a menu, use the change_owner_menu tool.
-Before calling it, make sure you have:
-- The day of the menu to change.
-- At least one item name.
-- A price for every item name.
-
-If the owner forgets the day, ask for the day.
-If an item name is missing, ask for the item name.
-If a price is missing, ask for the price.
-Never guess an item name, day, or price.
-
-The menu-change tool is currently a demo and does not update backend data.
+When the owner wants to edit an existing menu item, first use get_owner_menus
+to find its menu item ID. Then use edit_owner_menu_item with that ID and the
+requested item name and price. Never guess a menu item ID.
 """
 
 
@@ -198,42 +189,67 @@ def get_owner_menus() -> str:
 
 
 @tool
-def change_owner_menu(day: str, items_and_prices: dict[str, float]) -> str:
+def edit_owner_menu_item(item_id: str, item_and_price: dict[str, float]) -> str:
     """
-    Demo tool for changing a mess owner's menu for a specific day.
+    Edit an existing owner menu item using its menu item ID.
 
     Args:
-        day: The day whose menu should be changed, such as Monday.
-        items_and_prices: A map where each item name is a key and its price
-            is the numeric value, such as {"Poha": 40, "Tea": 15}.
+        item_id: The menu item ID returned by get_owner_menus.
+        item_and_price: A one-entry map with the item name as key and its
+            numeric price as value, such as {"Poha": 50}.
 
-    This is currently a demo and does not update the backend.
+    Sends a PATCH request to /editItem/{item_id} with this body shape:
+    {"item": {"Poha": 50}}.
     """
-    if not day or not day.strip():
-        return "Please provide the day for which you want to change the menu."
+    if not item_id or not item_id.strip():
+        return "Please provide the menu item ID to edit."
 
-    if not items_and_prices:
-        return "Please provide at least one menu item and its price."
+    if not item_and_price:
+        return "Please provide the item name and price."
 
-    invalid_items = [
-        item_name
-        for item_name, price in items_and_prices.items()
-        if not item_name.strip() or price < 0
-    ]
-    if invalid_items:
-        return "Each menu item needs a name and a valid non-negative price."
+    if len(item_and_price) != 1:
+        return "Please provide exactly one item name and price for this menu item."
 
-    menu_lines = [
-        f"- {item_name}: {price}"
-        for item_name, price in items_and_prices.items()
-    ]
+    item_name, price = next(iter(item_and_price.items()))
+    if not item_name.strip():
+        return "Please provide the menu item name."
 
-    return (
-        "Demo only: the menu was not changed in the backend.\n"
-        f"Requested day: {day.strip()}\n"
-        "Requested items and prices:\n"
-        + "\n".join(menu_lines)
-    )
+    if price < 0:
+        return "Please provide a valid non-negative price."
+
+    url = f"{SERVER_URL}/editItem/{item_id.strip()}"
+    payload = {
+        "item": {
+            item_name.strip(): price,
+        },
+    }
+
+    try:
+        print("Url:", url)
+
+        cookie_header = OWNER_COOKIE_HEADER.get()
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        if cookie_header:
+            headers["Cookie"] = cookie_header
+
+        response = requests.patch(
+            url,
+            json=payload,
+            headers=headers,
+            timeout=10,
+        )
+
+        if response.status_code == 404:
+            return "The requested menu item was not found."
+
+        response.raise_for_status()
+        return response.text or "Menu item updated successfully."
+    except requests.RequestException as e:
+        print("Error editing owner menu item:", e)
+        return "Unable to edit the owner menu item right now. Please try again later."
 
 
 # =========================
@@ -248,7 +264,11 @@ student_agent = create_agent(
 
 mess_owner_agent = create_agent(
     model=llm,
-    tools=[get_mess_owner_personal_data, get_owner_menus, change_owner_menu],
+    tools=[
+        get_mess_owner_personal_data,
+        get_owner_menus,
+        edit_owner_menu_item,
+    ],
     system_prompt=SYSTEM_PROMPT_MESS_OWNER,
 )
 
