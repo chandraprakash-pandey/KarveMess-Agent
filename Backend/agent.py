@@ -42,7 +42,8 @@ clearly say that you don't have that information.
 
 When the owner wants to edit an existing menu item, first use get_owner_menus
 to find its menu item ID. Then use edit_owner_menu_item with that ID and the
-requested item name and price. Never guess a menu item ID.
+requested changes. The tool can edit existing items, add new items, and delete
+items from the same menu update. Never guess a menu item ID.
 """
 
 
@@ -189,44 +190,49 @@ def get_owner_menus() -> str:
 
 
 @tool
-def edit_owner_menu_item(item_id: str, item_and_price: dict[str, float]) -> str:
+def edit_owner_menu_item(
+    item_id: str,
+    item_and_price: dict[str, float] | None = None,
+    items_to_add: dict[str, float] | None = None,
+    items_to_delete: list[str] | None = None,
+) -> str:
     """
-    Edit an existing owner menu item using its menu item ID.
+    Update an owner's complete menu map using its menu document ID.
 
     Args:
         item_id: The menu item ID returned by get_owner_menus.
-        item_and_price: A one-entry map with the item name as key and its
-            numeric price as value, such as {"Poha": 50}.
+        item_and_price: Optional map of existing item name to new price,
+            such as {"Poha": 50}.
+        items_to_add: Optional map of new item name to price,
+            such as {"Masala Dosa": 90}.
+        items_to_delete: Optional list of item names to remove,
+            such as ["Tea"].
 
-    Sends a PATCH request to /editItem/{item_id} with this body shape:
-    {"item": {"Poha": 50}}.
+    Fetches the current item map, applies all requested changes, and sends the
+    complete map to /editItem/{item_id}. The deployed backend replaces the
+    entire item map during PATCH, so the full map must be sent.
     """
     if not item_id or not item_id.strip():
         return "Please provide the menu item ID to edit."
 
-    if not item_and_price:
-        return "Please provide the item name and price."
+    item_and_price = item_and_price or {}
+    items_to_add = items_to_add or {}
+    items_to_delete = items_to_delete or []
 
-    if len(item_and_price) != 1:
-        return "Please provide exactly one item name and price for this menu item."
+    if not item_and_price and not items_to_add and not items_to_delete:
+        return "Please provide an item to edit, add, or delete."
 
-    item_name, price = next(iter(item_and_price.items()))
-    if not item_name.strip():
-        return "Please provide the menu item name."
+    requested_prices = {**item_and_price, **items_to_add}
+    for item_name, price in requested_prices.items():
+        if not item_name or not item_name.strip():
+            return "Every menu item must have a name."
+        if not isinstance(price, (int, float)) or isinstance(price, bool) or price < 0:
+            return f"Please provide a valid non-negative price for {item_name}."
 
-    if price < 0:
-        return "Please provide a valid non-negative price."
-
-    url = f"{SERVER_URL}/editItem/{item_id.strip()}"
-    payload = {
-        "item": {
-            item_name.strip(): price,
-        },
-    }
+    if any(not item_name or not item_name.strip() for item_name in items_to_delete):
+        return "Every item to delete must have a name."
 
     try:
-        print("Url:", url)
-
         cookie_header = OWNER_COOKIE_HEADER.get()
         headers = {
             "Accept": "application/json",
@@ -234,6 +240,56 @@ def edit_owner_menu_item(item_id: str, item_and_price: dict[str, float]) -> str:
         }
         if cookie_header:
             headers["Cookie"] = cookie_header
+
+        menus_url = f"{SERVER_URL}/myItems"
+        print("Url:", menus_url)
+
+        menus_response = requests.get(
+            menus_url,
+            headers=headers,
+            timeout=10,
+        )
+        menus_response.raise_for_status()
+        menus_data = menus_response.json()
+
+        if isinstance(menus_data, list):
+            menu_records = menus_data
+        elif isinstance(menus_data, dict):
+            menu_records = menus_data.get("items", menus_data.get("data", [menus_data]))
+        else:
+            return "The owner menu response has an invalid format."
+
+        if not isinstance(menu_records, list):
+            return "The owner menu response has an invalid format."
+
+        menu_record = next(
+            (
+                record
+                for record in menu_records
+                if str(record.get("_id", record.get("id", ""))) == item_id.strip()
+            ),
+            None,
+        )
+
+        if not menu_record or not isinstance(menu_record.get("item"), dict):
+            return "The requested menu item was not found or has an invalid format."
+
+        complete_item_map = dict(menu_record["item"])
+
+        for item_name, price in item_and_price.items():
+            complete_item_map[item_name.strip()] = price
+
+        for item_name, price in items_to_add.items():
+            complete_item_map[item_name.strip()] = price
+
+        for item_name in items_to_delete:
+            complete_item_map.pop(item_name.strip(), None)
+
+        url = f"{SERVER_URL}/editItem/{item_id.strip()}"
+        payload = {
+            "item": complete_item_map,
+        }
+        print("Url:", url)
 
         response = requests.patch(
             url,
@@ -247,7 +303,7 @@ def edit_owner_menu_item(item_id: str, item_and_price: dict[str, float]) -> str:
 
         response.raise_for_status()
         return response.text or "Menu item updated successfully."
-    except requests.RequestException as e:
+    except (requests.RequestException, ValueError) as e:
         print("Error editing owner menu item:", e)
         return "Unable to edit the owner menu item right now. Please try again later."
 
