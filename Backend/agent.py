@@ -95,8 +95,6 @@ def get_todays_menu() -> str:
     - Item price
     With Friendly way with Student.
 
-    Do not include ChefId or any other backend/internal fields.
-
     Do not use this tool for past or future dates.
     """
     url = f"{SERVER_URL}/menu"
@@ -108,7 +106,29 @@ def get_todays_menu() -> str:
             return "No Mess Owner added Menu today!!"
 
         response.raise_for_status()
-        return response.text
+        print("Response:", response.text)
+        
+        # Parse the response and extract only required fields
+        data = response.json()
+        
+        if isinstance(data, list):
+            filtered_menus = []
+            for mess in data:
+                chef_info = mess.get("chefId", {})
+                filtered_menu = {
+                    "fullName": chef_info.get("fullName"),
+                    "messName": chef_info.get("messName"),
+                    "messAddress": chef_info.get("messAddress"),
+                    "item": mess.get("item"),
+                    "day": mess.get("day"),
+                }
+                filtered_menus.append(filtered_menu)
+            
+            import json
+            print("Filtered Menus:", json.dumps(filtered_menus, indent=2))
+            return json.dumps(filtered_menus, indent=2)
+        else:
+            return response.text
     except requests.RequestException:
         return "Unable to fetch today's menu right now. Please try again later."
 
