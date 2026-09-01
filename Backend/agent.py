@@ -40,10 +40,15 @@ Never invent personal details.
 If the required information is not available through a tool,
 clearly say that you don't have that information.
 
-When the owner wants to edit an existing menu item, first use get_owner_menus
-to find its menu item ID. Then use edit_owner_menu_item with that ID and the
-requested changes. The tool can edit existing items, add new items, and delete
-items from the same menu update. Never guess a menu item ID.
+**IMPORTANT - MENU EDITING WORKFLOW:**
+When the owner wants to edit an existing menu item, ALWAYS follow these steps:
+1. First, use get_owner_menus to find the menu item ID
+2. Then, use preview_menu_edit with the menu ID and requested changes to show what will change
+3. Wait for the owner to confirm the changes
+4. Only after owner confirmation, use edit_owner_menu_item with the same parameters to apply the changes
+
+The tool can edit existing items, add new items, and delete items from the same menu update. 
+Never guess a menu item ID - always fetch it first.
 """
 
 
@@ -210,6 +215,115 @@ def get_owner_menus() -> str:
 
 
 @tool
+def preview_menu_edit(
+    item_id: str,
+    item_and_price: dict[str, float] | None = None,
+    items_to_add: dict[str, float] | None = None,
+    items_to_delete: list[str] | None = None,
+) -> str:
+    """
+    Preview menu changes before applying them. Shows what will be edited, added, or deleted.
+    
+    IMPORTANT: Always use this tool FIRST before calling edit_owner_menu_item.
+    
+    Args:
+        item_id: The menu item ID returned by get_owner_menus.
+        item_and_price: Optional map of existing item name to new price,
+            such as {"Poha": 50}.
+        items_to_add: Optional map of new item name to price,
+            such as {"Masala Dosa": 90}.
+        items_to_delete: Optional list of item names to remove,
+            such as ["Tea"].
+    
+    Returns a summary of changes without applying them. After owner confirms,
+    use edit_owner_menu_item with the same parameters to apply the changes.
+    """
+    if not item_id or not item_id.strip():
+        return "Please provide the menu item ID to preview."
+
+    item_and_price = item_and_price or {}
+    items_to_add = items_to_add or {}
+    items_to_delete = items_to_delete or []
+
+    if not item_and_price and not items_to_add and not items_to_delete:
+        return "Please provide changes to preview (edit, add, or delete items)."
+
+    # Validate input
+    requested_prices = {**item_and_price, **items_to_add}
+    for item_name, price in requested_prices.items():
+        if not item_name or not item_name.strip():
+            return "Every menu item must have a name."
+        if not isinstance(price, (int, float)) or isinstance(price, bool) or price < 0:
+            return f"Please provide a valid non-negative price for {item_name}."
+
+    if any(not item_name or not item_name.strip() for item_name in items_to_delete):
+        return "Every item to delete must have a name."
+
+    try:
+        # Fetch current menu to show what exists
+        cookie_header = OWNER_COOKIE_HEADER.get()
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        if cookie_header:
+            headers["Cookie"] = cookie_header
+
+        menus_url = f"{SERVER_URL}/myItems"
+        menus_response = requests.get(menus_url, headers=headers, timeout=10)
+        menus_response.raise_for_status()
+        menus_data = menus_response.json()
+
+        if isinstance(menus_data, list):
+            menu_records = menus_data
+        elif isinstance(menus_data, dict):
+            menu_records = menus_data.get("items", menus_data.get("data", [menus_data]))
+        else:
+            return "Unable to fetch current menu for preview."
+
+        menu_record = next(
+            (record for record in menu_records if str(record.get("_id", record.get("id", ""))) == item_id.strip()),
+            None,
+        )
+
+        if not menu_record or not isinstance(menu_record.get("item"), dict):
+            return "The requested menu item was not found."
+
+        current_items = menu_record["item"]
+
+        # Build summary
+        summary = "📋 **MENU CHANGE PREVIEW** 📋\n\n"
+        
+        if item_and_price:
+            summary += "**Items to Update:**\n"
+            for item_name, new_price in item_and_price.items():
+                old_price = current_items.get(item_name.strip(), "N/A")
+                summary += f"  • {item_name.strip()}: ₹{old_price} → ₹{new_price}\n"
+            summary += "\n"
+
+        if items_to_add:
+            summary += "**Items to Add:**\n"
+            for item_name, price in items_to_add.items():
+                summary += f"  • {item_name.strip()}: ₹{price} (new)\n"
+            summary += "\n"
+
+        if items_to_delete:
+            summary += "**Items to Delete:**\n"
+            for item_name in items_to_delete:
+                price = current_items.get(item_name.strip(), "N/A")
+                summary += f"  • {item_name.strip()}: ₹{price}\n"
+            summary += "\n"
+
+        summary += "✅ **Please confirm these changes by saying 'yes' or 'confirm'.**"
+        
+        return summary
+
+    except requests.RequestException as e:
+        print("Error previewing menu changes:", e)
+        return "Unable to preview menu changes right now. Please try again later."
+
+
+@tool
 def edit_owner_menu_item(
     item_id: str,
     item_and_price: dict[str, float] | None = None,
@@ -218,6 +332,8 @@ def edit_owner_menu_item(
 ) -> str:
     """
     Update an owner's complete menu map using its menu document ID.
+    
+    IMPORTANT: Always call preview_menu_edit FIRST to show the owner what changes will be made.
 
     Args:
         item_id: The menu item ID returned by get_owner_menus.
@@ -322,7 +438,7 @@ def edit_owner_menu_item(
             return "The requested menu item was not found."
 
         response.raise_for_status()
-        return response.text or "Menu item updated successfully."
+        return "✅ Menu item updated successfully! Changes have been applied."
     except (requests.RequestException, ValueError) as e:
         print("Error editing owner menu item:", e)
         return "Unable to edit the owner menu item right now. Please try again later."
@@ -343,6 +459,7 @@ mess_owner_agent = create_agent(
     tools=[
         get_mess_owner_personal_data,
         get_owner_menus,
+        preview_menu_edit,
         edit_owner_menu_item,
     ],
     system_prompt=SYSTEM_PROMPT_MESS_OWNER,
