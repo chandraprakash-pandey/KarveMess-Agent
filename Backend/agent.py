@@ -224,7 +224,7 @@ def preview_menu_edit(
     """
     Preview menu changes before applying them. Shows what will be edited, added, or deleted.
     
-    IMPORTANT: Always use this tool FIRST before calling edit_owner_menu_item.
+    IMPORTANT: Always use this tool FIRST before calling edit_owner_menu_item or delete_owner_menu_card.
     
     Args:
         item_id: The menu item ID returned by get_owner_menus.
@@ -236,7 +236,7 @@ def preview_menu_edit(
             such as ["Tea"].
     
     Returns a summary of changes without applying them. After owner confirms,
-    use edit_owner_menu_item with the same parameters to apply the changes.
+    use edit_owner_menu_item or delete_owner_menu_card with the same parameters to apply the changes.
     """
     if not item_id or not item_id.strip():
         return "Please provide the menu item ID to preview."
@@ -444,6 +444,52 @@ def edit_owner_menu_item(
         return "Unable to edit the owner menu item right now. Please try again later."
 
 
+@tool
+def delete_owner_menu_card(item_id: str) -> str:
+    """
+    Delete a mess owner's complete menu card for a specific day.
+
+    Use this tool when the mess owner wants to:
+    - Delete an entire menu card
+    - Remove all items from a specific day's menu
+    - Remove a menu record completely
+
+    Args:
+        item_id: The menu item ID (from get_owner_menus response _id field)
+
+    This tool sends a DELETE request to /editItem/{item_id}.
+    First use get_owner_menus to get the list of menu IDs.
+    """
+    if not item_id or not item_id.strip():
+        return "Please provide the menu item ID to delete."
+
+    try:
+        cookie_header = OWNER_COOKIE_HEADER.get()
+        headers = {
+            "Accept": "application/json",
+        }
+        if cookie_header:
+            headers["Cookie"] = cookie_header
+
+        url = f"{SERVER_URL}/editItem/{item_id.strip()}"
+        print("Url:", url)
+
+        response = requests.delete(
+            url,
+            headers=headers,
+            timeout=10,
+        )
+
+        if response.status_code == 404:
+            return "The requested menu card was not found."
+
+        response.raise_for_status()
+        return "✅ Menu card deleted successfully!"
+    except requests.RequestException as e:
+        print("Error deleting owner menu card:", e)
+        return "Unable to delete the menu card right now. Please try again later."
+
+
 # =========================
 # AGENT
 # =========================
@@ -461,6 +507,7 @@ mess_owner_agent = create_agent(
         get_owner_menus,
         preview_menu_edit,
         edit_owner_menu_item,
+        delete_owner_menu_card,
     ],
     system_prompt=SYSTEM_PROMPT_MESS_OWNER,
 )
