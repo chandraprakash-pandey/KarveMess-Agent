@@ -224,7 +224,7 @@ def preview_menu_edit(
     """
     Preview menu changes before applying them. Shows what will be edited, added, or deleted.
     
-    IMPORTANT: Always use this tool FIRST before calling edit_owner_menu_item or delete_owner_menu_card.
+    IMPORTANT: Always use this tool FIRST before calling edit_owner_menu_item .
     
     Args:
         item_id: The menu item ID returned by get_owner_menus.
@@ -236,7 +236,7 @@ def preview_menu_edit(
             such as ["Tea"].
     
     Returns a summary of changes without applying them. After owner confirms,
-    use edit_owner_menu_item or delete_owner_menu_card with the same parameters to apply the changes.
+    use edit_owner_menu_item with the same parameters to apply the changes.
     """
     if not item_id or not item_id.strip():
         return "Please provide the menu item ID to preview."

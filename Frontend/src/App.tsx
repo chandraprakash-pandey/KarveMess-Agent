@@ -19,6 +19,88 @@ const sleep = (ms: number): Promise<void> =>
     setTimeout(resolve, ms);
   });
 
+// --- KarveMess neo-brutalist design system (shared across the app) ---
+const NEO_STYLES = `
+  .neo-border {
+    border: 3px solid #312e81;
+  }
+  .dot-pattern {
+    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .btn-lifted {
+    transition: all 0.2s ease;
+  }
+  .btn-lifted:active {
+    transform: translate(2px, 2px);
+  }
+  .shadow-neo-sm {
+    box-shadow: 2px 2px 0px 0px #312e81;
+  }
+  .shadow-neo {
+    box-shadow: 4px 4px 0px 0px #312e81;
+  }
+  .shadow-neo-lg {
+    box-shadow: 6px 6px 0px 0px #312e81;
+  }
+  .bg-primary {
+    background-color: #f87116;
+  }
+  .text-primary {
+    color: #f87116;
+  }
+  .bg-indigo-custom {
+    background-color: #312e81;
+  }
+  .text-indigo-custom {
+    color: #312e81;
+  }
+  .bg-yellow-custom {
+    background-color: #facc15;
+  }
+  .text-yellow-custom {
+    color: #facc15;
+  }
+  .bg-background-light {
+    background-color: #fffdf5;
+  }
+  .font-display {
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .border-t-3 {
+    border-top-width: 3px;
+  }
+
+  @keyframes pulse-scale {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes wiggle {
+    0%, 100% {
+      transform: rotate(0deg);
+    }
+    25% {
+      transform: rotate(-5deg);
+    }
+    75% {
+      transform: rotate(5deg);
+    }
+  }
+
+  .pulse-scale {
+    animation: pulse-scale 2s ease-in-out infinite;
+  }
+
+  .wiggle {
+    animation: wiggle 2s ease-in-out infinite;
+  }
+`;
+
 function App() {
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -164,28 +246,28 @@ function App() {
 
   if (!selectedRole) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-700 flex items-center justify-center px-6 py-10">
-        <div className="w-full max-w-3xl rounded-3xl bg-white/95 p-8 md:p-12 shadow-2xl border border-white/50 backdrop-blur">
-          <p className="text-xs font-semibold tracking-[0.24em] uppercase text-orange-600">
+      <div className="min-h-screen bg-background-light dot-pattern font-display flex items-center justify-center px-6 py-10">
+        <div className="w-full max-w-3xl rounded-3xl bg-white neo-border shadow-neo-lg p-8 md:p-12">
+          <p className="text-xs font-black tracking-[0.24em] uppercase text-primary">
             Access Lock
           </p>
 
-          <h1 className="mt-3 text-3xl md:text-4xl font-bold text-slate-900 leading-tight">
+          <h1 className="mt-3 text-3xl md:text-4xl font-black text-indigo-custom leading-tight uppercase tracking-tight">
             Choose how you want to enter KarveAgent
           </h1>
 
-          <p className="mt-4 text-slate-600 text-base md:text-lg">
+          <p className="mt-4 text-indigo-custom/70 font-bold text-base md:text-lg">
             Student opens student chat directly. Owner requires login verification before opening owner chat.
           </p>
 
           <div className="mt-10 grid gap-4 md:grid-cols-2">
             <button
               onClick={handleStudentRole}
-              className="rounded-2xl px-6 py-5 text-left bg-slate-900 text-white hover:bg-slate-700 transition-colors"
+              className="btn-lifted rounded-2xl px-6 py-5 text-left bg-indigo-custom text-white neo-border shadow-neo hover:bg-primary transition-colors"
             >
-              <div className="text-lg font-semibold">Use Agent as Student</div>
+              <div className="text-lg font-black uppercase tracking-wide">Use Agent as Student</div>
 
-              <div className="text-sm text-slate-300 mt-1">
+              <div className="text-sm text-white/80 mt-1 font-bold">
                 Opens the student assistant you already built.
               </div>
             </button>
@@ -193,54 +275,82 @@ function App() {
             <button
               onClick={handleOwnerRole}
               disabled={ownerButtonLoading}
-              className="rounded-2xl px-6 py-5 text-left bg-orange-100 text-orange-900 border border-orange-300 hover:bg-orange-200 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              className="btn-lifted rounded-2xl px-6 py-5 text-left bg-yellow-custom text-indigo-custom neo-border shadow-neo hover:bg-primary hover:text-white transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <div className="text-lg font-semibold">Use Agent as Mess Owner</div>
+              <div className="text-lg font-black uppercase tracking-wide">Use Agent as Mess Owner</div>
 
-              <div className="text-sm text-orange-800 mt-1">
+              <div className="text-sm mt-1 font-bold">
                 {ownerButtonLoading ? "Checking login..." : "Checks login and opens owner chat."}
               </div>
             </button>
           </div>
 
           {ownerGateMessage !== "" && (
-            <div className="mt-6 rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-orange-900">
+            <div className="mt-6 rounded-xl neo-border bg-yellow-custom/20 px-4 py-3 text-indigo-custom font-bold">
               {ownerGateMessage}
             </div>
           )}
         </div>
+
+        <style>{NEO_STYLES}</style>
       </div>
     );
   }
 
   return (
-    <div className={isOwnerMode ? "h-screen flex flex-col bg-orange-50" : "h-screen flex flex-col bg-white"}>
+    <div className="h-screen flex flex-col bg-white font-display">
       {/* Header */}
-      <header className={isOwnerMode ? "border-b border-orange-200 px-6 py-4 flex items-center justify-between gap-4 bg-orange-100" : "border-b px-6 py-4 flex items-center justify-between gap-4"}>
-        <div>
-          <h1 className="text-xl font-bold">KarveAgent</h1>
+      <header className={
+        isOwnerMode
+          ? "border-b-4 border-yellow-custom px-6 py-4 flex items-center justify-between gap-4 bg-background-light dot-pattern"
+          : "border-b-4 border-indigo-custom px-6 py-4 flex items-center justify-between gap-4 bg-background-light dot-pattern"
+      }>
+        <div className="flex items-center gap-3">
+          <div className={
+            isOwnerMode
+              ? "size-10 bg-yellow-custom neo-border rounded-xl flex items-center justify-center shadow-neo shrink-0"
+              : "size-10 bg-primary neo-border rounded-xl flex items-center justify-center shadow-neo shrink-0"
+          }>
+            <span className={isOwnerMode ? "text-indigo-custom font-black text-lg" : "text-white font-black text-lg"}>
+              {isOwnerMode ? "O" : "K"}
+            </span>
+          </div>
 
-          <p className="text-sm text-gray-500">
-            {isOwnerMode ? "AI Assistant for Mess Owners" : "AI Assistant for Students"}
-          </p>
+          <div>
+            <h1 className="text-xl font-black text-indigo-custom uppercase tracking-tight">KarveAgent</h1>
+
+            <p className="text-sm text-indigo-custom/60 font-bold">
+              {isOwnerMode ? "AI Assistant for Mess Owners" : "AI Assistant for Students"}
+            </p>
+          </div>
         </div>
 
         <button
           onClick={handleBackToRoleSelection}
-          className="text-sm px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
+          className="btn-lifted text-xs font-black uppercase tracking-wide px-3 py-2 rounded-lg neo-border bg-white text-indigo-custom hover:bg-primary hover:text-white shadow-neo-sm transition-colors"
         >
           Change Role
         </button>
       </header>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-white">
         <div className="max-w-3xl mx-auto px-4 py-6">
           {messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-center pt-32">
-              <h2 className="text-3xl font-bold mt-5">How can I help you?</h2>
+              <div className={
+                isOwnerMode
+                  ? "size-16 bg-yellow-custom neo-border rounded-2xl flex items-center justify-center shadow-neo pulse-scale mb-5"
+                  : "size-16 bg-primary neo-border rounded-2xl flex items-center justify-center shadow-neo pulse-scale mb-5"
+              }>
+                <span className={isOwnerMode ? "text-indigo-custom font-black text-2xl" : "text-white font-black text-2xl"}>
+                  {isOwnerMode ? "O" : "K"}
+                </span>
+              </div>
 
-              <p className="text-gray-500 mt-2">
+              <h2 className="text-3xl font-black text-indigo-custom uppercase tracking-tight mt-5">How can I help you?</h2>
+
+              <p className="text-indigo-custom/60 font-bold mt-2">
                 Ask me anything about your mess.
               </p>
             </div>
@@ -261,8 +371,8 @@ function App() {
                   <div
                     className={
                       isOwnerMode
-                        ? "w-8 h-8 flex-shrink-0 bg-orange-600 text-white rounded-lg flex items-center justify-center font-bold mr-3"
-                        : "w-8 h-8 flex-shrink-0 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold mr-3"
+                        ? "w-8 h-8 flex-shrink-0 bg-yellow-custom text-indigo-custom neo-border shadow-neo-sm rounded-lg flex items-center justify-center font-black mr-3"
+                        : "w-8 h-8 flex-shrink-0 bg-primary text-white neo-border shadow-neo-sm rounded-lg flex items-center justify-center font-black mr-3"
                     }
                   >
                     {isOwnerMode ? "O" : "K"}
@@ -272,8 +382,8 @@ function App() {
                 <div
                   className={
                     msg.role === "user"
-                      ? "max-w-xl bg-gray-100 px-4 py-3 rounded-2xl"
-                      : "max-w-xl px-1 py-3"
+                      ? "max-w-xl bg-indigo-custom text-white px-4 py-3 rounded-2xl neo-border shadow-neo-sm font-bold"
+                      : "max-w-xl px-1 py-3 text-indigo-custom"
                   }
                 >
                   {msg.role === "agent" ? (
@@ -293,14 +403,14 @@ function App() {
                 <div
                   className={
                     isOwnerMode
-                      ? "w-8 h-8 bg-orange-600 text-white rounded-lg flex items-center justify-center font-bold mr-3"
-                      : "w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold mr-3"
+                      ? "w-8 h-8 bg-yellow-custom text-indigo-custom neo-border shadow-neo-sm rounded-lg flex items-center justify-center font-black mr-3"
+                      : "w-8 h-8 bg-primary text-white neo-border shadow-neo-sm rounded-lg flex items-center justify-center font-black mr-3"
                   }
                 >
                   {isOwnerMode ? "O" : "K"}
                 </div>
 
-                <div className="text-gray-500">KarveAgent is thinking...</div>
+                <div className="text-indigo-custom/60 font-bold">KarveAgent is thinking...</div>
               </div>
             )}
           </div>
@@ -310,15 +420,13 @@ function App() {
       </div>
 
       {/* Input */}
-      <div className={isOwnerMode ? "border-t border-orange-200 bg-orange-50 p-4" : "border-t bg-white p-4"}>
+      <div className={
+        isOwnerMode
+          ? "border-t-4 border-yellow-custom bg-background-light dot-pattern p-4"
+          : "border-t-4 border-indigo-custom bg-background-light dot-pattern p-4"
+      }>
         <div className="max-w-3xl mx-auto">
-          <div
-            className={
-              isOwnerMode
-                ? "flex items-end gap-2 border border-orange-300 rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-orange-500"
-                : "flex items-end gap-2 border border-gray-300 rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500"
-            }
-          >
+          <div className="flex items-end gap-2 bg-white neo-border rounded-2xl p-2 shadow-neo">
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -326,7 +434,7 @@ function App() {
               placeholder={isOwnerMode ? "Message Owner Agent..." : "Message KarveAgent..."}
               rows={1}
               disabled={loading}
-              className="flex-1 resize-none outline-none px-3 py-2"
+              className="flex-1 resize-none outline-none px-3 py-2 font-bold text-indigo-custom placeholder:text-indigo-custom/40 placeholder:font-bold bg-transparent"
             />
 
             <button
@@ -334,21 +442,23 @@ function App() {
               disabled={loading || message.trim() === ""}
               className={
                 isOwnerMode
-                  ? "bg-orange-600 text-white px-4 py-2 rounded-xl disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  : "bg-blue-600 text-white px-4 py-2 rounded-xl disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  ? "btn-lifted bg-yellow-custom text-indigo-custom neo-border shadow-neo-sm font-black px-4 py-2 rounded-xl disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none disabled:cursor-not-allowed transition-colors"
+                  : "btn-lifted bg-primary text-white neo-border shadow-neo-sm font-black px-4 py-2 rounded-xl disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none disabled:cursor-not-allowed transition-colors"
               }
             >
               ↑
             </button>
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-2">
+          <p className="text-center text-xs text-indigo-custom/50 font-bold uppercase tracking-wide mt-2">
             {isOwnerMode
               ? "Owner Agent can access your owner profile tools."
               : "KarveAgent can access and manage your mess data."}
           </p>
         </div>
       </div>
+
+      <style>{NEO_STYLES}</style>
     </div>
   );
 }
